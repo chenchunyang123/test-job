@@ -1,7 +1,24 @@
 import { create } from 'zustand'
 import { produce } from 'immer'
-import type { PrototypeSchema } from '../types/schema'
+import type { ComponentNode, PrototypeSchema } from '../types/schema'
 import { DEFAULT_SCHEMA } from '../types/schema'
+
+function findAndUpdateNode(
+  nodes: ComponentNode[],
+  id: string,
+  updater: (node: ComponentNode) => void,
+): boolean {
+  for (const node of nodes) {
+    if (node.id === id) {
+      updater(node)
+      return true
+    }
+    if (node.children && findAndUpdateNode(node.children, id, updater)) {
+      return true
+    }
+  }
+  return false
+}
 
 interface SchemaState {
   schema: PrototypeSchema
@@ -11,6 +28,7 @@ interface SchemaState {
 
   setSchema: (schema: PrototypeSchema) => void
   updateSchema: (schema: PrototypeSchema) => void
+  moveNode: (id: string, left: number, top: number) => void
   undo: () => void
   redo: () => void
   canUndo: () => boolean
@@ -40,6 +58,23 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
           newHistory.shift()
         }
         state.schema = schema
+        state.history = newHistory
+        state.historyIndex = newHistory.length - 1
+      }),
+    )
+  },
+
+  moveNode: (id, left, top) => {
+    set(
+      produce((state: SchemaState) => {
+        findAndUpdateNode(state.schema.children, id, (node) => {
+          node.style = { ...node.style, left, top }
+        })
+        const newHistory = state.history.slice(0, state.historyIndex + 1)
+        newHistory.push(JSON.parse(JSON.stringify(state.schema)))
+        if (newHistory.length > MAX_HISTORY) {
+          newHistory.shift()
+        }
         state.history = newHistory
         state.historyIndex = newHistory.length - 1
       }),

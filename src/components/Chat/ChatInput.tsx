@@ -12,8 +12,12 @@ export interface ChatInputHandle {
 export const ChatInput = forwardRef<ChatInputHandle>(function ChatInput(_, ref) {
   const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { addMessage, setLoading, isLoading, clearMessages } = useChatStore()
+  const { addMessage, setLoading, isLoading, clearMessages, setProgressChars } = useChatStore()
   const { schema, updateSchema, setSchema } = useSchemaStore()
+
+  const handleProgress = (chars: number) => {
+    setProgressChars(chars)
+  }
 
   const doSend = async (text: string) => {
     if (!text.trim() || isLoading) return
@@ -23,7 +27,7 @@ export const ChatInput = forwardRef<ChatInputHandle>(function ChatInput(_, ref) 
     setLoading(true)
 
     try {
-      const newSchema = await modifySchema(schema, text)
+      const newSchema = await modifySchema(schema, text, handleProgress)
       updateSchema(newSchema)
       addMessage('assistant', '原型图已更新！')
     } catch (err) {
@@ -61,7 +65,7 @@ export const ChatInput = forwardRef<ChatInputHandle>(function ChatInput(_, ref) 
       setLoading(true)
 
       try {
-        const newSchema = await screenshotToSchema(base64)
+        const newSchema = await screenshotToSchema(base64, handleProgress)
         setSchema(newSchema)
         addMessage('assistant', '已根据截图生成原型图！你可以继续通过对话来修改。')
       } catch (err) {

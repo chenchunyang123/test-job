@@ -68,6 +68,30 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
   )
 }
 
+function LoadingIndicator() {
+  const { progressChars } = useChatStore()
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        color: '#999',
+        fontSize: '13px',
+        padding: '8px 0',
+      }}
+    >
+      <LoadingOutlined spin />
+      <span>
+        {progressChars > 0
+          ? `AI 正在生成... 已接收 ${progressChars} 字符`
+          : 'AI 正在思考...'}
+      </span>
+    </div>
+  )
+}
+
 interface MessageListProps {
   onQuickPrompt?: (text: string) => void
 }
@@ -162,19 +186,7 @@ export function MessageList({ onQuickPrompt }: MessageListProps) {
           <MessageBubble key={msg.id} msg={msg} />
         ))}
       {isLoading && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            alignItems: 'center',
-            color: '#999',
-            fontSize: '13px',
-            padding: '8px 0',
-          }}
-        >
-          <LoadingOutlined spin />
-          <span>AI 正在思考...</span>
-        </div>
+        <LoadingIndicator />
       )}
       <div ref={bottomRef} />
     </div>

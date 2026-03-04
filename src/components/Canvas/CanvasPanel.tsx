@@ -1,13 +1,25 @@
+import { useState, useCallback, useRef } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
+import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import { useSchemaStore } from '../../store/useSchemaStore'
 import { ComponentRenderer } from './ComponentRenderer'
 
 export function CanvasPanel() {
-  const { schema, selectNode, selectedNodeId } = useSchemaStore()
+  const { schema, selectNode, selectedNodeId, moveNode } = useSchemaStore()
+  const [isDragging, setIsDragging] = useState(false)
+  const transformRef = useRef<ReactZoomPanPinchRef>(null)
+
+  const getScale = useCallback(() => {
+    return transformRef.current?.state?.scale ?? 1
+  }, [])
 
   const handleCanvasClick = () => {
     selectNode(null)
   }
+
+  const handleDragStateChange = useCallback((dragging: boolean) => {
+    setIsDragging(dragging)
+  }, [])
 
   return (
     <div
@@ -15,11 +27,13 @@ export function CanvasPanel() {
       style={{ backgroundColor: '#f0f2f5' }}
     >
       <TransformWrapper
+        ref={transformRef}
         initialScale={1}
         minScale={0.25}
         maxScale={3}
         centerOnInit
         limitToBounds={false}
+        panning={{ disabled: isDragging }}
       >
         <TransformComponent
           wrapperStyle={{ width: '100%', height: '100%' }}
@@ -38,7 +52,7 @@ export function CanvasPanel() {
               backgroundColor: schema.backgroundColor,
               boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
               borderRadius: '8px',
-              overflow: 'hidden',
+              overflow: 'visible',
               position: 'relative',
             }}
           >
@@ -69,6 +83,9 @@ export function CanvasPanel() {
                   node={node}
                   onSelect={selectNode}
                   selectedId={selectedNodeId}
+                  onNodeMove={moveNode}
+                  onDragStateChange={handleDragStateChange}
+                  getScale={getScale}
                 />
               ))
             )}
